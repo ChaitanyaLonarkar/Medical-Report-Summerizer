@@ -13,28 +13,33 @@ class ProcessPDFView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request, *args, **kwargs):
-        file_obj = request.data.get('file')
+        files = request.FILES.getlist('files')
         
-        if not file_obj:
-            return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+        if not files:
+            # Fallback to single 'file' key if 'files' is not present
+            single_file = request.data.get('file')
+            if single_file:
+                files = [single_file]
+            else:
+                return Response({"error": "No files provided"}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            # 1. Extract Text
-            chunks = extract_text_from_pdf(file_obj)
+            all_chunks = []
+            for file_obj in files:
+                # 1. Extract Text from each file
+                chunks = extract_text_from_pdf(file_obj)
+                if chunks:
+                    all_chunks.extend(chunks)
             
-            if not chunks:
-                 return Response({"error": "Could not extract text from PDF"}, status=status.HTTP_400_BAD_REQUEST)
+            if not all_chunks:
+                 return Response({"error": "Could not extract text from any of the PDFs"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # 2. Summarize
-            # note: summarize_medical_chunks returns a JSON string, need to parse it or pass it through
-            summary_json_str = summarize_medical_chunks(chunks)
+            # 2. Summarize the combined chunks
+            summary_json_str = summarize_medical_chunks(all_chunks)
             
-            # The LLM prompt asks for JSON output. 
-            # It might perform better if we try to parse it to ensure it is valid JSON before sending back
             try:
                 summary_data = json.loads(summary_json_str)
             except json.JSONDecodeError:
-                # If LLM failed to give pure JSON, return raw content or handle error
                 summary_data = {"raw_summary": summary_json_str, "note": "LLM did not return strict JSON"}
 
             return Response(summary_data, status=status.HTTP_200_OK)

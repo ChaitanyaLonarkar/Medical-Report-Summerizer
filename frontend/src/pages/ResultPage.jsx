@@ -49,10 +49,7 @@ const ResultPage = () => {
                 <div className="max-w-[1400px] mx-auto">
 
                     {/* Top Action Bar */}
-                    <div className="flex justify-between items-center mb-6">
-                        <Button variant="outline" onClick={() => navigate('/')} className="text-sm">
-                            <ChevronLeft size={16} className="mr-1" /> Back
-                        </Button>
+                    <div className="flex justify-end items-center mb-6">
                         <div className="flex gap-3">
                             <div className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center">
                                 <ShieldCheck size={14} className="mr-1.5" /> Zero Data Retention

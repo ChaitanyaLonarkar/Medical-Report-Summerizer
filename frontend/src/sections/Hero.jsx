@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle, Shield, Loader, File, Cpu, PlusCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Loader, File, Cpu, PlusCircle, X } from 'lucide-react';
 import Section from '../components/common/Section';
 import Button from '../components/common/Button';
 import axios from 'axios';
@@ -10,7 +10,7 @@ const Hero = () => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
@@ -29,14 +29,14 @@ const Hero = () => {
         setIsDragOver(false);
         const files = e.dataTransfer.files;
         if (files && files.length > 0) {
-            handleFileValidation(files[0]);
+            handleFilesValidation(Array.from(files));
         }
     };
 
     const handleFileSelect = async (e) => {
         const files = e.target.files;
         if (files && files.length > 0) {
-            handleFileValidation(files[0]);
+            handleFilesValidation(Array.from(files));
         }
     };
 
@@ -44,23 +44,34 @@ const Hero = () => {
         fileInputRef.current.click();
     };
 
-    const handleFileValidation = (file) => {
-        if (file.type !== 'application/pdf') {
-            setError('Please upload a valid PDF file.');
-            return;
+    const handleFilesValidation = (newFiles) => {
+        const validFiles = newFiles.filter(file => file.type === 'application/pdf');
+
+        if (validFiles.length !== newFiles.length) {
+            setError('Only PDF files are supported. Some files were skipped.');
+        } else {
+            setError(null);
         }
-        setError(null);
-        setSelectedFile(file);
+
+        if (validFiles.length > 0) {
+            setSelectedFiles(prev => [...prev, ...validFiles]);
+        }
+    };
+
+    const removeFile = (index) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSummarize = async () => {
-        if (!selectedFile) return;
+        if (selectedFiles.length === 0) return;
 
         setLoading(true);
         setError(null);
 
         const formData = new FormData();
-        formData.append('file', selectedFile);
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
 
         try {
             const response = await axios.post('http://localhost:8000/api/upload/', formData, {
@@ -141,27 +152,56 @@ const Hero = () => {
                                 <p className="text-gray-900 font-bold text-lg">Analyzing Document...</p>
                                 <p className="text-gray-500 mt-2 text-sm max-w-xs">Extracting vital signs, medications, and clinical history.</p>
                             </div>
-                        ) : selectedFile ? (
+                        ) : selectedFiles.length > 0 ? (
                             // File Selected State
-                            <div className="flex flex-col items-center justify-center py-4 animate-fadeIn">
-                                <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-4">
-                                    <CheckCircle size={32} />
+                            <div className="flex flex-col items-center justify-center py-4 w-full animate-fadeIn">
+                                <div className="w-16 h-16 bg-primary-50 text-primary-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                                    <FileText size={32} />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-1">Uploaded Successfully</h3>
-                                <div className="flex items-center gap-2 text-gray-500 mb-8 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
-                                    <FileText size={16} />
-                                    <span className="text-sm font-medium truncate max-w-[200px]">{selectedFile.name}</span>
+
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">{selectedFiles.length} {selectedFiles.length === 1 ? 'Report' : 'Reports'} Ready</h3>
+
+                                <div className="w-full max-h-48 overflow-y-auto mb-8 space-y-2 pr-2 custom-scrollbar">
+                                    {selectedFiles.map((file, index) => (
+                                        <div key={index} className="flex items-center justify-between gap-3 text-gray-600 bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100 group">
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <File size={16} className="text-primary-500 shrink-0" />
+                                                <span className="text-sm font-medium truncate">{file.name}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => removeFile(index)}
+                                                className="text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 <div className="flex flex-col gap-3 w-full max-w-xs">
                                     <Button onClick={handleSummarize} variant="primary" className="w-full py-3 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
-                                        <Cpu size={18} className="mr-2" /> Summarize with AI
+                                        <Cpu size={18} className="mr-2" /> Summarize {selectedFiles.length === 1 ? 'Report' : 'All Reports'}
                                     </Button>
+
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="application/pdf"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        onChange={handleFileSelect}
+                                    />
                                     <button
-                                        onClick={() => setSelectedFile(null)}
-                                        className="text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
+                                        onClick={handleButtonClick}
+                                        className="text-primary-600 hover:text-primary-700 text-sm font-semibold py-2 transition-colors flex items-center justify-center gap-1"
                                     >
-                                        Remove & Upload Another
+                                        <Upload size={14} /> Add More
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedFiles([])}
+                                        className="text-gray-400 hover:text-gray-600 text-sm font-medium py-2 transition-colors flex items-center justify-center gap-1"
+                                    >
+                                        <X size={14} /> Clear All
                                     </button>
                                 </div>
                             </div>
@@ -173,21 +213,22 @@ const Hero = () => {
                                 </div>
 
                                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                    Drag & drop your medical report
+                                    Drag & drop your medical reports
                                 </h3>
                                 <p className="text-gray-400 text-sm mb-8">
-                                    Supported formats: PDF (Max 20MB)
+                                    Supported formats: PDF (Multiple allowed)
                                 </p>
 
                                 <input
                                     type="file"
+                                    multiple
                                     accept="application/pdf"
                                     ref={fileInputRef}
                                     className="hidden"
                                     onChange={handleFileSelect}
                                 />
                                 <Button onClick={handleButtonClick}>
-                                    Select File
+                                    Select Files
                                 </Button>
                             </>
                         )}
@@ -200,11 +241,7 @@ const Hero = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 flex justify-center gap-6 text-gray-400 text-sm">
-                    <div className="flex items-center gap-2">
-                        <Shield size={16} /> Secure & Private
-                    </div>
-                </div>
+
             </div>
         </Section >
     );
