@@ -1,6 +1,11 @@
 # Client for interacting with Groq LLM API
 import os
+import re # Regex for JSON extraction
 from groq import Groq
+from .prompts import SYSTEM_PROMPT
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Initialize Groq client
 client = Groq(
@@ -22,7 +27,7 @@ def summarize_medical_chunks(chunks):
     prompt = build_prompt(chunks)
 
     response = client.chat.completions.create(
-        model="llama3-70b-8192",  # free + strong reasoning
+        model="llama-3.3-70b-versatile",  # free + strong reasoning
         messages=[
             {
                 "role": "system",
@@ -37,7 +42,14 @@ def summarize_medical_chunks(chunks):
         max_tokens=800
     )
 
-    return response.choices[0].message.content
+    content = response.choices[0].message.content
+    
+    # Extract JSON object using regex
+    match = re.search(r'\{.*\}', content, re.DOTALL)
+    if match:
+        return match.group(0)
+        
+    return content
 
 
 def build_prompt(chunks):
