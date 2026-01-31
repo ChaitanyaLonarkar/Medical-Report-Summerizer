@@ -1,10 +1,24 @@
 import os
+import json
+import re
 from groq import Groq
+from .prompts import SYSTEM_PROMPT
+from dotenv import load_dotenv, find_dotenv
+
+# Load environment variables
+dot_env_path = find_dotenv()
+if dot_env_path:
+    load_dotenv(dot_env_path, override=True)
+else:
+    load_dotenv(override=True)
 
 # Initialize Groq client
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
-)
+api_key = os.getenv("GROQ_API_KEY")
+client = None
+if api_key:
+    client = Groq(api_key=api_key)
+else:
+    print("WARNING: GROQ_API_KEY not found.")
 
 def summarize_medical_chunks(chunks):
     """
@@ -17,30 +31,66 @@ def summarize_medical_chunks(chunks):
         }
     ]
     """
+    if not client:
+        return json.dumps({
+            "patient_profile": {},
+            "sections": { "chief_complaint": "Error: GROQ_API_KEY not configured." },
+            "medications": [],
+            "timeline": [],
+            "lab_data": []
+        })
 
-    prompt = build_prompt(chunks)
+    try:
+        # 1. Prepare Full Text
+        chunks_text = [
+            f"[Chunk {c['chunk_id']} | Page {c['page']}]\n{c['text']}" for c in chunks
+        ]
+        full_text = "\n\n".join(chunks_text)
 
-    response = client.chat.completions.create(
-        model="llama3-70b-8192",  # free + strong reasoning
-        messages=[
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.0,     # critical → no creativity
-        max_tokens=800
-    )
+        # 2. Build User Prompt
+        user_instructions = f"""
+Extract medical data from the text below into specific JSON format. Use 'null' for missing fields. Infer medication types (e.g., 'Antibiotic').
 
-    return response.choices[0].message.content
+REQUIRED JSON STRUCTURE:
+{{
+  "patient_profile": {{ "name": "str", "age": "str", "gender": "str", "location": "str", "phone": "str", "email": "str", "doctor": "str", "primary_diagnosis": "str" }},
+  "sections": {{
+    "chief_complaint": "str",
+    "diagnosis_details": "str", 
+    "key_findings": [{{ "text": "str", "page": int }}],
+    "treatment_plan": ["str"],
+    "vital_signs": {{ "bp": "str", "hr": "str", "temp": "str", "spo2": "str", "resp": "str" }}
+  }},
+  "medications": [{{ "name": "str", "dose": "str", "frequency": "str", "type": "str" }}],
+  "timeline": [{{ "date": "YYYY-MM-DD", "event": "str" }}],
+  "lab_data": [{{ "test_name": "str", "value": float, "unit": "str" }}]
+}}
+
+DOCUMENT TEXT:
+{full_text}
+"""
+        # 3. Call Groq API
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT + "\n\nPlease output valid JSON only."
+                },
+                {
+                    "role": "user",
+                    "content": user_instructions
+                }
+            ],
+            model="llama-3.3-70b-versatile",
+            response_format={"type": "json_object"},
+            temperature=0.1, 
+        )
+
+        content = chat_completion.choices[0].message.content
+        return content
 
     except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        # Return a valid empty JSON structure on error to prevent frontend crash
+        print(f"Error calling Groq API: {e}")
         return json.dumps({
             "patient_profile": {},
             "sections": { "chief_complaint": f"Error generating summary: {str(e)}" },
