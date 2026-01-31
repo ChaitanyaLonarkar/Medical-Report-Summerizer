@@ -61,9 +61,19 @@ REQUIRED JSON STRUCTURE:
     "treatment_plan": ["str"],
     "vital_signs": {{ "bp": "str", "hr": "str", "temp": "str", "spo2": "str", "resp": "str" }}
   }},
-  "medications": [{{ "name": "str", "dose": "str", "frequency": "str", "type": "str" }}],
+  "medications": [{{ "name": "str", "dose": "str", "frequency": "str", "type": "str", "quantity": int }}],
   "timeline": [{{ "date": "YYYY-MM-DD", "event": "str" }}],
-  "lab_data": [{{ "test_name": "str", "value": float, "unit": "str" }}]
+  "lab_data": [{{ "test_name": "str", "value": float, "unit": "str" }}],
+  "billing_summary": {{
+    "total_bill": "str",
+    "medicine_cost": "str",
+    "breakdown": [{{ "category": "str", "amount": float, "currency": "str" }}]
+  }},
+  "medicine_tracking": {{
+    "start_date": "YYYY-MM-DD",
+    "end_date": "YYYY-MM-DD",
+    "total_days": int
+  }}
 }}
 
 DOCUMENT TEXT:
