@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, PlusCircle } from 'lucide-react';
 import Section from '../components/common/Section';
 
 const FAQItem = ({ question, answer }) => {
@@ -49,14 +49,29 @@ const FAQ = () => {
     ];
 
     return (
-        <Section className="bg-gray-50">
+        <Section
+            id="faq"
+            className="bg-gray-50 overflow-hidden"
+            bgElements={
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-grid-pattern opacity-60"></div>
+                    <div className="absolute top-1/2 left-[-5%] w-96 h-96 bg-amber-200/40 rounded-full blur-[100px]"></div>
+                    <div className="absolute top-[10%] right-[10%] text-primary-200/50 transform rotate-45">
+                        <PlusCircle size={60} strokeWidth={1} />
+                    </div>
+                    <div className="absolute bottom-[5%] left-[15%] text-primary-200/50 transform -rotate-12">
+                        <PlusCircle size={40} strokeWidth={1} />
+                    </div>
+                </div>
+            }
+        >
             <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 font-serif">
                     Frequently Asked Questions
                 </h2>
             </div>
 
-            <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 px-6 md:px-12 py-4">
+            <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 px-6 md:px-12 py-4 relative z-10">
                 {faqs.map((faq, index) => (
                     <FAQItem key={index} question={faq.question} answer={faq.answer} />
                 ))}

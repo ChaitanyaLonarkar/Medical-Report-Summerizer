@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle, Shield, Loader, File, Cpu } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Shield, Loader, File, Cpu, PlusCircle } from 'lucide-react';
 import Section from '../components/common/Section';
 import Button from '../components/common/Button';
 import axios from 'axios';
@@ -80,8 +80,37 @@ const Hero = () => {
     };
 
     return (
-        <Section className="bg-gradient-to-b from-primary-50 to-white pt-24 md:pt-32 pb-16">
-            <div className="text-center max-w-4xl mx-auto mb-12">
+        <Section
+            className="bg-gradient-to-b from-primary-50 to-white pt-24 md:pt-32 pb-16 overflow-hidden"
+            bgElements={
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                    {/* Grid Pattern */}
+                    <div className="absolute inset-0 bg-grid-pattern opacity-100"></div>
+
+                    {/* Floating Blobs */}
+                    <div className="absolute top-[-5%] left-[-10%] w-[50%] h-[70%] bg-primary-200/50 rounded-full blur-[120px] animate-pulse"></div>
+                    <div className="absolute bottom-[0%] right-[-10%] w-[45%] h-[60%] bg-amber-200/40 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+                    <div className="absolute top-[15%] right-[5%] w-[30%] h-[40%] bg-primary-300/30 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '4s' }}></div>
+
+                    {/* Vector Shapes */}
+                    <div className="absolute top-[10%] right-[15%] text-primary-200/40 transform rotate-12 scale-150">
+                        <PlusCircle size={100} strokeWidth={0.5} />
+                    </div>
+                    <div className="absolute bottom-[20%] left-[10%] text-amber-200/40 transform -rotate-12">
+                        <PlusCircle size={80} strokeWidth={0.5} />
+                    </div>
+                    <div className="absolute top-[40%] left-[5%] text-primary-200/30 transform rotate-45 scale-75">
+                        <PlusCircle size={120} strokeWidth={0.5} />
+                    </div>
+                </div>
+            }
+        >
+            <div className="text-center max-w-4xl mx-auto mb-12 relative">
+                {/* Small floating element near heading */}
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-amber-100/50 border border-amber-200 px-4 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-sm animate-bounce shadow-sm">
+                    <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                    <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">New: AI Analysis v2.0</span>
+                </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
                     Summarize <span className="text-primary-600">Medical Reports</span> with AI
                 </h1>
@@ -175,13 +204,9 @@ const Hero = () => {
                     <div className="flex items-center gap-2">
                         <Shield size={16} /> Secure & Private
                     </div>
-                    <span>•</span>
-                    <div>
-                        HIPAA Compliant Processing
-                    </div>
                 </div>
             </div>
-        </Section>
+        </Section >
     );
 };
 

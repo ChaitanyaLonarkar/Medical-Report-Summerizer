@@ -59,11 +59,8 @@ const ToolsGrid = () => {
                 ))}
                 {/* promotional card to make the grid even or interesting */}
                 <Card className="bg-gradient-to-br from-primary-600 to-primary-800 text-white flex flex-col justify-center items-center text-center p-8">
-                    <h3 className="text-2xl font-bold mb-2">All-in-One</h3>
-                    <p className="text-primary-100 mb-6">Get access to all these tools with our Pro plan.</p>
-                    <button className="bg-white text-primary-700 font-bold py-2 px-6 rounded-full hover:bg-gray-100 transition-colors">
-                        Explore Pro
-                    </button>
+                    <h3 className="text-2xl font-bold mb-2">Coming Soon</h3>
+                    <p className="text-primary-100 text-lg font-medium">More will coming stay tune</p>
                 </Card>
             </div>
         </Section>

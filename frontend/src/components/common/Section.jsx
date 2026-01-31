@@ -4,11 +4,13 @@ const Section = ({
     children,
     className = '',
     id = '',
-    containerClass = ''
+    containerClass = '',
+    bgElements = null
 }) => {
     return (
-        <section id={id} className={`py-16 md:py-24 ${className}`}>
-            <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${containerClass}`}>
+        <section id={id} className={`relative py-16 md:py-24 ${className}`}>
+            {bgElements}
+            <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 ${containerClass}`}>
                 {children}
             </div>
         </section>

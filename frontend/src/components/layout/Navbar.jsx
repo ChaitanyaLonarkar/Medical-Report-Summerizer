@@ -15,10 +15,8 @@ const Navbar = () => {
     }, []);
 
     const navLinks = [
-        { name: 'Product', href: '#features' },
         { name: 'How it Works', href: '#how-it-works' },
-        { name: 'Security', href: '#security' },
-        { name: 'Pricing', href: '#pricing' },
+        { name: 'FAQ', href: '#faq' },
     ];
 
     return (
@@ -40,8 +38,8 @@ const Navbar = () => {
                         <span className="text-xl font-bold text-gray-900 tracking-tight">MedSummary AI</span>
                     </div>
 
-                    {/* Desktop Nav */}
-                    <nav className="hidden md:flex items-center gap-8">
+                    {/* Desktop Nav moved to Right */}
+                    <div className="hidden md:flex items-center gap-8 ml-auto">
                         {navLinks.map((link) => (
                             <a
                                 key={link.name}
@@ -51,11 +49,9 @@ const Navbar = () => {
                                 {link.name}
                             </a>
                         ))}
-                    </nav>
+                    </div>
 
-                    {/* Right Actions */}
                     <div className="hidden md:flex items-center gap-4">
-                        <Button>Get Started Free</Button>
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -86,7 +82,6 @@ const Navbar = () => {
                         ))}
                         <hr className="border-gray-100" />
                         <div className="flex flex-col gap-3 pt-2">
-                            <Button className="w-full justify-center">Get Started Free</Button>
                         </div>
                     </div>
                 </div>
