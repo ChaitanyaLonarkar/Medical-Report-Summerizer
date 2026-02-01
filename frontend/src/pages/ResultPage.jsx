@@ -293,7 +293,7 @@ const ResultPage = () => {
                                     <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
                                         Medicine Qty
                                     </h4>
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer width="100%" height="90%">
                                         <BarChart data={mockMedicineSales}>
                                             <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} />
                                             <Tooltip />

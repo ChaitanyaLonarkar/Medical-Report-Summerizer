@@ -5,6 +5,7 @@ import Section from '../components/common/Section';
 import Button from '../components/common/Button';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 const Hero = () => {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -74,7 +75,7 @@ const Hero = () => {
         });
 
         try {
-            const response = await axios.post('http://localhost:8000/api/upload/', formData, {
+            const response = await axios.post(`${API_BASE_URL}/api/upload/`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

@@ -25,9 +25,20 @@ SECRET_KEY = 'django-insecure-xzq3#v-yk-_(rq=)%el*qatmz&1vc_4%1e)k3v#(+-f*i8dl0+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['medical-report-summerizer-oyrx.onrender.com', 'localhost', '127.0.0.1', 'medical-report-summerizer-1.onrender.com']
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS & CSRF Settings
+CORS_ALLOWED_ORIGINS = [
+    "https://medical-report-summerizer-1.onrender.com",
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://medical-report-summerizer-1.onrender.com",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
