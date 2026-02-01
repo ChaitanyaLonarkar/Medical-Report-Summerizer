@@ -8,7 +8,10 @@ import {
     Thermometer, Heart, Beaker, Clock, ChevronLeft, Download,
     ShieldCheck, PlusCircle
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+    BarChart, Bar, LineChart, Line, PieChart, Pie, AreaChart, Area,
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
+} from 'recharts';
 
 const ResultPage = () => {
     const location = useLocation();
@@ -22,6 +25,8 @@ const ResultPage = () => {
     }, [summary, navigate]);
 
     if (!summary) return null;
+
+    console.log("DEBUG: Full Summary Data:", summary);
 
     let { patient_profile, sections, medications, timeline, lab_data, billing_summary, medicine_tracking } = summary;
 
@@ -297,6 +302,18 @@ const ResultPage = () => {
                                     </ResponsiveContainer>
                                 </div>
 
+                                {/* --- Dynamic Chart from LLM Analysis --- */}
+                                {summary?.dynamic_chart && (
+                                    <div className="col-span-12 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-96">
+                                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
+                                            <div className="w-8 h-8 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center"><Activity size={16} /></div>
+                                            {summary.dynamic_chart.title || "Insight Analysis"}
+                                        </h4>
+                                        <ResponsiveContainer width="100%" height="90%">
+                                            {renderDynamicChart(summary.dynamic_chart)}
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
                             </div>
 
                             <p className="text-center text-xs text-gray-400 mt-8 pb-8">
@@ -319,5 +336,84 @@ const VitalBox = ({ label, value, unit }) => (
         <div className="text-[10px] text-gray-400">{unit}</div>
     </div>
 );
+
+const renderDynamicChart = (chartConfig) => {
+    console.log("DEBUG: rendering dynamic chart with config:", chartConfig);
+    if (!chartConfig || !chartConfig.data || chartConfig.data.length === 0) return null;
+
+    // Extract labels (default to empty string if not provided)
+    const { chart_type, data, x_axis_key, data_key, x_label, y_label } = chartConfig;
+    const commonProps = { data, margin: { top: 10, right: 30, left: 20, bottom: 20 } };
+
+    // Helper for axis labels
+    const xAxisLabel = x_label ? { value: x_label, position: 'insideBottom', offset: -10, fill: '#6B7280', fontSize: 12 } : undefined;
+    const yAxisLabel = y_label ? { value: y_label, angle: -90, position: 'insideLeft', fill: '#6B7280', fontSize: 12 } : undefined;
+
+    switch (chart_type) {
+        case 'line':
+            return (
+                <LineChart {...commonProps}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <XAxis dataKey={x_axis_key || 'label'} tick={{ fontSize: 12 }} stroke="#9CA3AF" label={xAxisLabel} />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#9CA3AF" label={yAxisLabel} />
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                    <Legend verticalAlign="top" height={36} />
+                    <Line name={y_label || "Value"} type="monotone" dataKey={data_key || 'value'} stroke="#6366f1" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+            );
+        case 'area':
+            return (
+                <AreaChart {...commonProps}>
+                    <defs>
+                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <XAxis dataKey={x_axis_key || 'label'} tick={{ fontSize: 12 }} stroke="#9CA3AF" label={xAxisLabel} />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#9CA3AF" label={yAxisLabel} />
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                    <Legend verticalAlign="top" height={36} />
+                    <Area name={y_label || "Value"} type="monotone" dataKey={data_key || 'value'} stroke="#8b5cf6" fillOpacity={1} fill="url(#colorValue)" />
+                </AreaChart>
+            );
+        case 'pie':
+            return (
+                <PieChart>
+                    <Pie
+                        data={data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        paddingAngle={5}
+                        dataKey={data_key || 'value'}
+                        nameKey={x_axis_key || 'label'}
+                        label
+                    >
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={['#0ea5e9', '#22c55e', '#eab308', '#f97316', '#ef4444'][index % 5]} />
+                        ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                    <Legend verticalAlign="bottom" />
+                </PieChart>
+            );
+        case 'bar':
+        default:
+            return (
+                <BarChart {...commonProps}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <XAxis dataKey={x_axis_key || 'label'} tick={{ fontSize: 12 }} stroke="#9CA3AF" label={xAxisLabel} />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#9CA3AF" label={yAxisLabel} />
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                    <Legend verticalAlign="top" height={36} />
+                    <Bar name={y_label || "Value"} dataKey={data_key || 'value'} fill="#0ea5e9" radius={[6, 6, 0, 0]} barSize={40} />
+                </BarChart>
+            );
+    }
+};
 
 export default ResultPage;

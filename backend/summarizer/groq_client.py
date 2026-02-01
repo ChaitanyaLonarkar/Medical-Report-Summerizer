@@ -6,10 +6,19 @@ from .prompts import SYSTEM_PROMPT
 from dotenv import load_dotenv, find_dotenv
 
 # Load environment variables
-dot_env_path = find_dotenv()
-if dot_env_path:
-    load_dotenv(dot_env_path, override=True)
+from pathlib import Path
+
+# Build path to .env file relative to this script
+# this script is in backend/summarizer/groq_client.py
+# .env is in backend/.env
+BASE_DIR = Path(__file__).resolve().parent.parent
+env_path = BASE_DIR / '.env'
+
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, override=True)
+    print(f"Loading .env from: {env_path}")
 else:
+    print(f"WARNING: .env file not found at {env_path}")
     load_dotenv(override=True)
 
 # Initialize Groq client
@@ -37,7 +46,8 @@ def summarize_medical_chunks(chunks):
             "sections": { "chief_complaint": "Error: GROQ_API_KEY not configured." },
             "medications": [],
             "timeline": [],
-            "lab_data": []
+            "lab_data": [],
+            "dynamic_chart": null
         })
 
     try:
@@ -73,8 +83,26 @@ REQUIRED JSON STRUCTURE:
     "start_date": "YYYY-MM-DD",
     "end_date": "YYYY-MM-DD",
     "total_days": int
+  }},
+  "dynamic_chart": {{
+    "chart_type": "str", 
+    "title": "str",
+    "x_label": "str",
+    "y_label": "str",
+    "data": [{{ "label": "str", "value": float }}],
+    "x_axis_key": "label",
+    "data_key": "value"
   }}
 }}
+
+INSTRUCTIONS FOR DYNAMIC CHART:
+Analyze the extracted data and determine the most useful visualization. 
+- If there are multiple lab results with values, create a 'bar' or 'line' chart comparing them.
+- If there is a breakdown of costs or categories, create a 'pie' chart.
+- If it's a timeline of values (like vital signs over time if available), create a 'line' chart.
+- If no specific numerical data is suitable for a chart, create a generic 'bar' chart showing counts of medications, issues, etc.
+- 'chart_type' must be one of: 'bar', 'line', 'pie', 'area'.
+- Populate 'data' with the actual values to plot.
 
 DOCUMENT TEXT:
 {full_text}
@@ -97,6 +125,9 @@ DOCUMENT TEXT:
         )
 
         content = chat_completion.choices[0].message.content
+        print("\n\n=== DEBUG: LLM RAW RESPONSE ===\n")
+        print(content)
+        print("\n===============================\n")
         return content
 
     except Exception as e:
@@ -106,6 +137,7 @@ DOCUMENT TEXT:
             "sections": { "chief_complaint": f"Error generating summary: {str(e)}" },
             "medications": [],
             "timeline": [],
-            "lab_data": []
+            "lab_data": [],
+            "dynamic_chart": null
         })
 
