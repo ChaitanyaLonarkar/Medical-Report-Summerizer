@@ -21,13 +21,27 @@ else:
     print(f"WARNING: .env file not found at {env_path}")
     load_dotenv(override=True)
 
-# Initialize Groq client
-api_key = os.getenv("GROQ_API_KEY")
-client = None
-if api_key:
-    client = Groq(api_key=api_key)
+# Manage API Keys with Rotation
+GROQ_KEYS = []
+# 1. Add primary key
+if os.getenv("GROQ_API_KEY"):
+    GROQ_KEYS.append(os.getenv("GROQ_API_KEY"))
+
+# 2. Add any other keys matching pattern GROQ_API_KEY_*
+for key, value in os.environ.items():
+    if key.startswith("GROQ_API_KEY_") and value:
+        GROQ_KEYS.append(value)
+
+# Deduplicate and Filter
+GROQ_KEYS = list(set([k for k in GROQ_KEYS if k and k.strip()]))
+
+# Models to try in order (Failover strategy)
+GROQ_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"]
+
+if not GROQ_KEYS:
+    print("WARNING: No GROQ_API_KEYs found in environment.")
 else:
-    print("WARNING: GROQ_API_KEY not found.")
+    print(f"Loaded {len(GROQ_KEYS)} Groq API keys for rotation.")
 
 def summarize_medical_chunks(chunks):
     """
@@ -40,10 +54,10 @@ def summarize_medical_chunks(chunks):
         }
     ]
     """
-    if not client:
+    if not GROQ_KEYS:
         return json.dumps({
             "patient_profile": {},
-            "sections": { "chief_complaint": "Error: GROQ_API_KEY not configured." },
+            "sections": { "chief_complaint": "Error: No GROQ_API_KEYs configured." },
             "medications": [],
             "timeline": [],
             "lab_data": [],
@@ -128,28 +142,56 @@ INSTRUCTIONS FOR PERSONALIZED GUIDANCE:
 DOCUMENT TEXT:
 {full_text}
 """
-        # 3. Call Groq API
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT + "\n\nPlease output valid JSON only."
-                },
-                {
-                    "role": "user",
-                    "content": user_instructions
-                }
-            ],
-            model="llama-3.1-8b-instant",
-            response_format={"type": "json_object"},
-            temperature=0.1, 
-        )
+        # 3. Call Groq API with Key Rotation & Model Fallback
+        last_exception = None
+        
+        # Prepare messages once
+        messages_payload = [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT + "\n\nPlease output valid JSON only."
+            },
+            {
+                "role": "user",
+                "content": user_instructions
+            }
+        ]
 
-        content = chat_completion.choices[0].message.content
-        print("\n\n=== DEBUG: LLM RAW RESPONSE ===\n")
-        print(content)
-        print("\n===============================\n")
-        return content
+        for i, api_key in enumerate(GROQ_KEYS):
+            try:
+                temp_client = Groq(api_key=api_key)
+                
+                for model in GROQ_MODELS:
+                    try:
+                        # print(f"Attempting: Key #{i+1} | Model: {model}")
+                        chat_completion = temp_client.chat.completions.create(
+                            messages=messages_payload,
+                            model=model,
+                            response_format={"type": "json_object"},
+                            temperature=0.1, 
+                        )
+
+                        content = chat_completion.choices[0].message.content
+                        print(f"\n\n=== DEBUG: LLM RAW RESPONSE (Key #{i+1} | {model}) ===\n")
+                        print(content)
+                        print("\n===============================\n")
+                        return content
+                    
+                    except Exception as e:
+                        print(f"FAILED: Key #{i+1} | Model {model} -> {str(e)}")
+                        last_exception = e
+                        continue # Try next model
+                        
+            except Exception as outer_e:
+                print(f"Critical Error with Key #{i+1}: {outer_e}")
+                last_exception = outer_e
+                continue # Try next key
+        
+        # If loop exits, all keys/models failed
+        if last_exception:
+            raise last_exception
+        else:
+            raise Exception("Unknown error: All API keys and models failed.")
 
     except Exception as e:
         print(f"Error calling Groq API: {e}")
