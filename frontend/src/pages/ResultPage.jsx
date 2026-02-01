@@ -6,11 +6,13 @@ import Button from '../components/common/Button';
 import {
     User, Activity, FileText, Calendar, Pill,
     Thermometer, Heart, Beaker, Clock, ChevronLeft, Download,
-    ShieldCheck, PlusCircle
+    ShieldCheck, PlusCircle, Footprints, Utensils, HelpCircle, CheckCircle, Droplet
 } from 'lucide-react';
 import {
     BarChart, Bar, LineChart, Line, PieChart, Pie, AreaChart, Area,
-    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
+    ComposedChart, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    RadialBarChart, RadialBar
 } from 'recharts';
 
 const ResultPage = () => {
@@ -28,21 +30,14 @@ const ResultPage = () => {
 
     console.log("DEBUG: Full Summary Data:", summary);
 
-    let { patient_profile, sections, medications, timeline, lab_data, billing_summary, medicine_tracking } = summary;
+    let { patient_profile, sections, medications, timeline, lab_data, medicine_tracking, personalized_guidance, dynamic_charts, vital_trends } = summary;
+
+
 
     // --- Mock Data fallback for visuals if API didn't return them ---
-    const mockBillingData = billing_summary?.breakdown || [
-        { category: 'Surgery', amount: 850 },
-        { category: 'Room', amount: 450 },
-        { category: 'Medicine', amount: 320 },
-        { category: 'Test', amount: 200 },
-        { category: 'Doctor', amount: 150 },
-    ];
 
-    const mockMedicineSales = medications?.map(m => ({
-        name: m.name.split(' ')[0], // short name
-        quantity: m.quantity || Math.floor(Math.random() * 30) + 10
-    })).slice(0, 5) || [];
+
+
 
     // ----------------------------------------------------------------
 
@@ -226,6 +221,8 @@ const ResultPage = () => {
                                 </div>
                             )}
 
+
+
                             {/* Current Medications Grid */}
                             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
                                 <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
@@ -254,67 +251,202 @@ const ResultPage = () => {
 
                             {/* Vitals & Charts Row */}
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                                {/* Vitals */}
-                                <div className="col-span-12 md:col-span-12 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                                    <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
-                                        <div className="w-8 h-8 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center"><Activity size={16} /></div>
-                                        Latest Vital Signs
-                                    </h4>
-                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                        <VitalBox label="BP" value={sections?.vital_signs?.bp} unit="mmHg" />
-                                        <VitalBox label="Heart Rate" value={sections?.vital_signs?.hr} unit="bpm" />
-                                        <VitalBox label="Temp" value={sections?.vital_signs?.temp} unit="°F" />
-                                        <VitalBox label="SpO2" value={sections?.vital_signs?.spo2} unit="%" />
-                                        <VitalBox label="Resp" value={sections?.vital_signs?.resp} unit="/min" />
+                                {/* --- Vital Statistics & Pulse --- */}
+                                <div className="col-span-12 space-y-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <h4 className="font-bold text-gray-800 text-lg">Vital Statistics</h4>
+                                        <div className="h-px bg-gray-200 flex-grow"></div>
+                                        <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
+                                            Latest Readings
+                                        </span>
                                     </div>
+
+                                    {/* Vitals Cards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {/* BP Card */}
+                                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
+                                            <div className="absolute right-0 top-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
+                                            <div className="flex flex-col h-full justify-between relative z-10">
+                                                <div className="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-3">
+                                                    <Droplet size={20} fill="currentColor" className="opacity-80" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm text-gray-500 font-medium mb-1">Blood Pressure</div>
+                                                    <div className="text-2xl font-bold text-gray-800">{sections?.vital_signs?.bp || '--/--'}</div>
+                                                    <div className="text-xs text-red-400 mt-1 font-medium">mmHg</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Heart Rate Card */}
+                                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
+                                            <div className="absolute right-0 top-0 w-24 h-24 bg-rose-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
+                                            <div className="flex flex-col h-full justify-between relative z-10">
+                                                <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mb-3">
+                                                    <Heart size={20} fill="currentColor" className="opacity-80" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm text-gray-500 font-medium mb-1">Heart Rate</div>
+                                                    <div className="text-2xl font-bold text-gray-800">{sections?.vital_signs?.hr || '--'}</div>
+                                                    <div className="text-xs text-rose-400 mt-1 font-medium">bpm</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* SpO2 / Respiratory Card */}
+                                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
+                                            <div className="absolute right-0 top-0 w-24 h-24 bg-cyan-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
+                                            <div className="flex flex-col h-full justify-between relative z-10">
+                                                <div className="w-10 h-10 rounded-full bg-cyan-100 text-cyan-500 flex items-center justify-center mb-3">
+                                                    <Activity size={20} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm text-gray-500 font-medium mb-1">SpO2 Level</div>
+                                                    <div className="text-2xl font-bold text-gray-800">{sections?.vital_signs?.spo2?.toString().replace('%', '') || '--'}%</div>
+                                                    <div className="text-xs text-cyan-400 mt-1 font-medium">Oxygen Saturation</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Pulse Chart Section - Render ONLY if we have data trends */}
+                                    {vital_trends && vital_trends.length > 1 && (
+                                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                                            <div className="flex justify-between items-center mb-6">
+                                                <h4 className="font-bold text-gray-800 text-lg text-rose-500 flex items-center gap-2">
+                                                    Pulse Trend
+                                                </h4>
+                                            </div>
+
+                                            <div className="h-64 w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <AreaChart data={vital_trends}>
+                                                        <defs>
+                                                            <linearGradient id="colorHr" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2} />
+                                                                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                        <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="#9ca3af" />
+                                                        <YAxis hide domain={['auto', 'auto']} />
+                                                        <Tooltip
+                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                                                        />
+                                                        <Area
+                                                            type="monotone"
+                                                            dataKey="hr"
+                                                            stroke="#f43f5e"
+                                                            strokeWidth={3}
+                                                            fillOpacity={1}
+                                                            fill="url(#colorHr)"
+                                                        />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            </div>
+
+                                            <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
+                                                <span className="font-bold text-gray-800">Average Heart Rate:</span>
+                                                <span className="text-rose-500 font-bold">{sections?.vital_signs?.hr || '-'} bpm</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Financial Chart (Spend by Type) */}
-                                <div className="col-span-12 md:col-span-8 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-80">
-                                    <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
-                                        Spend by Charge Type (Est.)
-                                    </h4>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart layout="vertical" data={mockBillingData} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                            <XAxis type="number" hide />
-                                            <YAxis dataKey="category" type="category" width={80} tick={{ fontSize: 12 }} />
-                                            <Tooltip cursor={{ fill: 'transparent' }} />
-                                            <Bar dataKey="amount" fill="#f97316" radius={[0, 4, 4, 0]} barSize={20}>
-                                                {mockBillingData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5'][index % 5]} />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
 
-                                {/* Medicine Sales Chart */}
-                                <div className="col-span-12 md:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-80">
-                                    <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
-                                        Medicine Qty
-                                    </h4>
-                                    <ResponsiveContainer width="100%" height="90%">
-                                        <BarChart data={mockMedicineSales}>
-                                            <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} />
-                                            <Tooltip />
-                                            <Bar dataKey="quantity" fill="#14b8a6" radius={[4, 4, 0, 0]} barSize={30} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
 
-                                {/* --- Dynamic Chart from LLM Analysis --- */}
-                                {summary?.dynamic_chart && (
-                                    <div className="col-span-12 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-96">
-                                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
-                                            <div className="w-8 h-8 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center"><Activity size={16} /></div>
-                                            {summary.dynamic_chart.title || "Insight Analysis"}
-                                        </h4>
-                                        <ResponsiveContainer width="100%" height="90%">
-                                            {renderDynamicChart(summary.dynamic_chart)}
-                                        </ResponsiveContainer>
+                                {/* --- Dynamic Charts Grid --- */}
+                                {dynamic_charts && dynamic_charts.length > 0 && (
+                                    <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {dynamic_charts.map((chartConfig, idx) => (
+                                            <div key={idx} className={`bg-white rounded-3xl p-6 shadow-sm border border-gray-100 ${dynamic_charts.length === 1 ? 'col-span-2' : ''} h-96`}>
+                                                <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
+                                                    <div className="w-8 h-8 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center"><Activity size={16} /></div>
+                                                    {chartConfig.title || "Insight Analysis"}
+                                                </h4>
+                                                <ResponsiveContainer width="100%" height="90%">
+                                                    {renderDynamicChart(chartConfig)}
+                                                </ResponsiveContainer>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
+
+                            {/* --- Personalized Patient Guidance --- */}
+                            {(personalized_guidance?.next_steps?.length > 0 || personalized_guidance?.lifestyle_tips?.length > 0) && (
+                                <div className="space-y-6">
+                                    {/* Next Steps & Lifestyle Headers */}
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-lg font-bold text-gray-800">Personalized Guidance</h3>
+                                        <div className="h-px bg-gray-200 flex-grow"></div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Next Steps */}
+                                        {personalized_guidance?.next_steps?.length > 0 && (
+                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                                                <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Footprints size={16} /></div>
+                                                    Next Steps
+                                                </h4>
+                                                <ul className="space-y-3">
+                                                    {personalized_guidance.next_steps.map((step, idx) => (
+                                                        <li key={idx} className="flex items-start gap-3 text-sm text-gray-700">
+                                                            <CheckCircle size={16} className="text-blue-500 mt-0.5" />
+                                                            <span>{step}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Lifestyle Tips */}
+                                        {personalized_guidance?.lifestyle_tips?.length > 0 && (
+                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                                                <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
+                                                    <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center"><Utensils size={16} /></div>
+                                                    Diet & Lifestyle
+                                                </h4>
+                                                <div className="space-y-3">
+                                                    {personalized_guidance.lifestyle_tips.map((tip, idx) => (
+                                                        <div key={idx} className="bg-orange-50 rounded-xl p-3 border border-orange-100">
+                                                            <div className="font-semibold text-orange-800 text-xs uppercase mb-1">{tip.topic}</div>
+                                                            <div className="text-sm text-orange-900">{tip.advice}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- FAQs (Questions & Answers) --- */}
+                            {personalized_guidance?.faq?.length > 0 && (
+                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl p-6 shadow-sm border border-indigo-100">
+                                    <h4 className="flex items-center gap-2 font-bold text-indigo-900 mb-4">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center"><HelpCircle size={16} /></div>
+                                        Answered Questions (FAQ)
+                                    </h4>
+                                    <p className="text-xs text-indigo-600 mb-6">
+                                        Common questions about your results, answered by AI based on the report data.
+                                    </p>
+                                    <div className="space-y-4">
+                                        {personalized_guidance.faq.map((item, idx) => (
+                                            <div key={idx} className="bg-white p-5 rounded-2xl shadow-sm border border-indigo-100">
+                                                <h5 className="text-indigo-900 font-bold text-sm mb-2 flex items-start gap-2">
+                                                    <span className="bg-indigo-100 text-indigo-600 w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">Q</span>
+                                                    {item.question}
+                                                </h5>
+                                                <p className="text-gray-600 text-sm pl-7 leading-relaxed">
+                                                    {item.answer}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <p className="text-center text-xs text-gray-400 mt-8 pb-8">
                                 This summary was generated in-memory with zero data persistence. No patient information is stored or logged.
@@ -329,20 +461,14 @@ const ResultPage = () => {
     );
 };
 
-const VitalBox = ({ label, value, unit }) => (
-    <div className="bg-gray-50 rounded-2xl p-4 text-center border border-gray-100">
-        <div className="text-xs text-gray-400 uppercase font-semibold mb-1">{label}</div>
-        <div className="text-xl font-bold text-gray-800">{value || '-'}</div>
-        <div className="text-[10px] text-gray-400">{unit}</div>
-    </div>
-);
+
 
 const renderDynamicChart = (chartConfig) => {
     console.log("DEBUG: rendering dynamic chart with config:", chartConfig);
     if (!chartConfig || !chartConfig.data || chartConfig.data.length === 0) return null;
 
     // Extract labels (default to empty string if not provided)
-    const { chart_type, data, x_axis_key, data_key, x_label, y_label } = chartConfig;
+    const { chart_type, data, x_axis_key, data_key, x_label, y_label, title } = chartConfig;
     const commonProps = { data, margin: { top: 10, right: 30, left: 20, bottom: 20 } };
 
     // Helper for axis labels
@@ -350,6 +476,44 @@ const renderDynamicChart = (chartConfig) => {
     const yAxisLabel = y_label ? { value: y_label, angle: -90, position: 'insideLeft', fill: '#6B7280', fontSize: 12 } : undefined;
 
     switch (chart_type) {
+        case 'composed':
+            return (
+                <ComposedChart {...commonProps}>
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <XAxis dataKey={x_axis_key || 'label'} scale="band" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey={data_key || 'value'} barSize={20} fill="#413ea0" />
+                    <Line type="monotone" dataKey={chartConfig.data_key_2 || 'value2'} stroke="#ff7300" />
+                </ComposedChart>
+            );
+        case 'radar':
+            return (
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+                        <PolarGrid stroke="#e5e7eb" />
+                        <PolarAngleAxis dataKey={x_axis_key || 'label'} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+                        <Radar name={title || "Data"} dataKey={data_key || 'value'} stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.5} />
+                        <Legend />
+                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                    </RadarChart>
+                </ResponsiveContainer>
+            );
+        case 'radial':
+            return (
+                <RadialBarChart innerRadius="10%" outerRadius="80%" barSize={10} data={data}>
+                    <RadialBar
+                        minAngle={15}
+                        label={{ position: 'insideStart', fill: '#fff' }}
+                        background
+                        clockWise
+                        dataKey={data_key || 'value'}
+                    />
+                    <Legend iconSize={10} width={120} height={140} layout="vertical" verticalAlign="middle" wrapperStyle={{ top: '50%', right: 0, transform: 'translate(0, -50%)', lineHeight: '24px' }} />
+                </RadialBarChart>
+            );
         case 'line':
             return (
                 <LineChart {...commonProps}>
@@ -385,7 +549,7 @@ const renderDynamicChart = (chartConfig) => {
                         data={data}
                         cx="50%"
                         cy="50%"
-                        innerRadius={80}
+                        innerRadius={60}
                         outerRadius={100}
                         fill="#8884d8"
                         paddingAngle={5}

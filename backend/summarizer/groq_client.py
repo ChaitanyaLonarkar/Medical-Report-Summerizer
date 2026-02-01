@@ -47,7 +47,7 @@ def summarize_medical_chunks(chunks):
             "medications": [],
             "timeline": [],
             "lab_data": [],
-            "dynamic_chart": null
+            "dynamic_charts": None
         })
 
     try:
@@ -84,25 +84,46 @@ REQUIRED JSON STRUCTURE:
     "end_date": "YYYY-MM-DD",
     "total_days": int
   }},
-  "dynamic_chart": {{
-    "chart_type": "str", 
-    "title": "str",
-    "x_label": "str",
-    "y_label": "str",
-    "data": [{{ "label": "str", "value": float }}],
-    "x_axis_key": "label",
-    "data_key": "value"
+  "vital_trends": [{{
+    "time": "str", 
+    "hr": int, 
+    "sbp": int, 
+    "dbp": int, 
+    "spo2": int,
+    "temp": float
+  }}],
+  "dynamic_charts": [
+    {{
+      "chart_type": "str", 
+      "title": "str",
+      "x_label": "str",
+      "y_label": "str",
+      "data": [{{ "label": "str", "value": float, "value2": float, "fullMark": float }}],
+      "x_axis_key": "label",
+      "data_key": "value",
+      "data_key_2": "value2"
+    }}
+  ],
+  "personalized_guidance": {{
+    "next_steps": ["str"],
+    "lifestyle_tips": [{{ "topic": "str", "advice": "str" }}],
+    "faq": [{{ "question": "str", "answer": "str" }}]
   }}
 }}
 
-INSTRUCTIONS FOR DYNAMIC CHART:
-Analyze the extracted data and determine the most useful visualization. 
-- If there are multiple lab results with values, create a 'bar' or 'line' chart comparing them.
-- If there is a breakdown of costs or categories, create a 'pie' chart.
-- If it's a timeline of values (like vital signs over time if available), create a 'line' chart.
-- If no specific numerical data is suitable for a chart, create a generic 'bar' chart showing counts of medications, issues, etc.
-- 'chart_type' must be one of: 'bar', 'line', 'pie', 'area'.
-- Populate 'data' with the actual values to plot.
+INSTRUCTIONS FOR DYNAMIC CHARTS:
+Create a dashboard-like experience by generating multiple charts if valid data exists.
+- 'chart_type' options: 'bar', 'line', 'pie', 'area', 'composed' (bar+line), 'radar', 'radial'.
+- 'composed': Use for comparing two metrics (e.g., 'value' vs 'value2') or trends.
+- 'radar': Great for multi-variable assessment (e.g., "Health Score" across 5 categories).
+- 'radial': Use for single percentage/gauge values (e.g., "Risk Level").
+- If extracted data supports it, create 2-3 distinct charts (e.g., one for Vitals trend, one for Lab comparison).
+- 'data_key_2' is optional, used for 'composed' charts (2nd metric).
+
+INSTRUCTIONS FOR PERSONALIZED GUIDANCE:
+- NEXT STEPS: FIRST, extract any explicit follow-up instructions, appointments, or plan mentioned in the report (e.g., "Return in 2 weeks", "Consult Cardiologist"). If none are explicit, suggest logical next steps based strictly on the diagnosis and abnormal findings.
+- Provide tailored 'lifestyle_tips' based on findings (e.g., "Low sugar" -> "Diabetes diet tips", "Low iron" -> "Iron-rich foods"). Include simple actionable advice on food, sleep, or hydration.
+- Generate 'faq' with 3-5 common questions a patient might have about this specific report, and provide clear, reassuring ANSWERS based on the findings.
 
 DOCUMENT TEXT:
 {full_text}
@@ -119,7 +140,7 @@ DOCUMENT TEXT:
                     "content": user_instructions
                 }
             ],
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             response_format={"type": "json_object"},
             temperature=0.1, 
         )
@@ -138,6 +159,6 @@ DOCUMENT TEXT:
             "medications": [],
             "timeline": [],
             "lab_data": [],
-            "dynamic_chart": null
+            "dynamic_charts": None
         })
 
