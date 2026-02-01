@@ -4,3 +4,5 @@ pymupdf
 groq
 python-dotenv
 requests
+django-cors-headers
+gunicorn
