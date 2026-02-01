@@ -14,11 +14,16 @@ import {
     ComposedChart, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     RadialBarChart, RadialBar
 } from 'recharts';
+import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
+import { useRef } from 'react';
 
 const ResultPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const summary = location.state?.summary;
+    const [isDownloading, setIsDownloading] = useState(false);
+    const reportRef = useRef();
 
     useEffect(() => {
         if (!summary) {
@@ -64,6 +69,71 @@ const ResultPage = () => {
 
     // ----------------------------------------------------------------
 
+    const handleDownloadPDF = async () => {
+        const element = reportRef.current;
+        if (!element) return;
+
+        setIsDownloading(true);
+        try {
+            // Give a small delay to ensure any animations/charts are fully settled
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Use html-to-image which is much better with oklch/modern CSS
+            const dataUrl = await toPng(element, {
+                quality: 0.95,
+                backgroundColor: '#f9fafb',
+                style: {
+                    transform: 'scale(1)',
+                    transformOrigin: 'top left'
+                },
+                // Skip the action buttons
+                filter: (node) => {
+                    if (node.classList && node.classList.contains('no-print')) return false;
+                    return true;
+                }
+            });
+
+            const pdf = new jsPDF({
+                orientation: 'p',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+
+            const img = new Image();
+            img.src = dataUrl;
+            await new Promise((resolve) => {
+                img.onload = resolve;
+            });
+
+            const imgWidth = 210;
+            const pageHeight = 295;
+            const imgHeight = (img.height * imgWidth) / img.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            // First page
+            pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+            heightLeft -= pageHeight;
+
+            // Handle multi-page content
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+                heightLeft -= pageHeight;
+            }
+
+            const fileName = `Medical_Report_${(patient_profile?.name || 'Summary').replace(/\s+/g, '_')}.pdf`;
+            pdf.save(fileName);
+        } catch (error) {
+            console.error('New Engine PDF Error:', error);
+            alert(`PDF Generation failed with the new engine. Error: ${error.message || 'Unknown issue'}.`);
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             <Navbar />
@@ -82,17 +152,31 @@ const ResultPage = () => {
                             <ChevronLeft size={20} />
                         </button>
 
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 no-print">
                             <div className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center">
                                 <ShieldCheck size={14} className="mr-1.5" /> Zero Data Retention
                             </div>
-                            <Button variant="primary" onClick={() => window.print()} className="bg-primary-600">
-                                <Download size={16} className="mr-2" /> PDF
+                            <Button
+                                variant="primary"
+                                onClick={handleDownloadPDF}
+                                className="bg-primary-600 relative overflow-hidden"
+                                disabled={isDownloading}
+                            >
+                                {isDownloading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download size={16} className="mr-2" /> Export PDF
+                                    </>
+                                )}
                             </Button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-12 gap-6">
+                    <div ref={reportRef} className="grid grid-cols-12 gap-6 p-1">
                         {/* --- LEFT SIDEBAR (Patient Identity) --- */}
                         <div className="col-span-12 lg:col-span-3 space-y-6">
                             {/* Blue/Primary Card */}
