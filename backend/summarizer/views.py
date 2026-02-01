@@ -6,6 +6,10 @@ from rest_framework import status
 from .pdf_utils import extract_text_from_pdf
 from .groq_client import summarize_medical_chunks
 import json
+import logging
+
+# Configure Logger
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -40,9 +44,11 @@ class ProcessPDFView(APIView):
             try:
                 summary_data = json.loads(summary_json_str)
             except json.JSONDecodeError:
+                logger.warning("LLM did not return strict JSON")
                 summary_data = {"raw_summary": summary_json_str, "note": "LLM did not return strict JSON"}
 
             return Response(summary_data, status=status.HTTP_200_OK)
 
         except Exception as e:
+            logger.error(f"Error processing PDF: {str(e)}", exc_info=True)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

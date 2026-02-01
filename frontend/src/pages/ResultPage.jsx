@@ -28,6 +28,29 @@ const ResultPage = () => {
 
     if (!summary) return null;
 
+    // --- Insufficient Data Handling ---
+    if (summary.insufficient_data) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+                <Navbar />
+                <div className="flex-grow flex flex-col items-center justify-center p-8 text-center">
+                    <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                        <FileText size={48} className="text-red-500 opacity-50" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Insufficient Information</h2>
+                    <p className="text-gray-600 max-w-md mb-8">
+                        The uploaded PDF does not appear to contain sufficient medical data to generate a report.
+                        Please ensure you upload a clear, valid medical record.
+                    </p>
+                    <Button variant="primary" onClick={() => navigate('/')} className="bg-primary-600">
+                        <ChevronLeft size={18} className="mr-2" /> Go Back
+                    </Button>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
     console.log("DEBUG: Full Summary Data:", summary);
 
     let { patient_profile, sections, medications, timeline, lab_data, medicine_tracking, personalized_guidance, dynamic_charts, vital_trends } = summary;
@@ -49,7 +72,16 @@ const ResultPage = () => {
                 <div className="max-w-[1400px] mx-auto">
 
                     {/* Top Action Bar */}
-                    <div className="flex justify-end items-center mb-6">
+                    <div className="flex justify-between items-center mb-6">
+                        {/* Back Button */}
+                        <button
+                            onClick={() => navigate('/')}
+                            className="bg-white p-2.5 rounded-xl text-gray-600 hover:text-primary-600 hover:bg-primary-50 border border-gray-200 shadow-sm transition-all"
+                            title="Go Back"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+
                         <div className="flex gap-3">
                             <div className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center">
                                 <ShieldCheck size={14} className="mr-1.5" /> Zero Data Retention
@@ -83,13 +115,19 @@ const ResultPage = () => {
                                 </div>
 
                                 <div className="space-y-4 text-sm opacity-90">
-                                    <div>
-                                        <div className="text-white/60 text-xs uppercase mb-0.5">Doctor</div>
-                                        <div className="font-medium">{patient_profile?.doctor || 'Not assigned'}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-white/60 text-xs uppercase mb-0.5">Primary Diagnosis</div>
-                                        <div className="font-medium">{patient_profile?.primary_diagnosis || 'Under Evaluation'}</div>
+                                    <div className="space-y-4 text-sm opacity-90">
+                                        {patient_profile?.doctor && patient_profile.doctor !== 'null' && (
+                                            <div>
+                                                <div className="text-white/60 text-xs uppercase mb-0.5">Doctor</div>
+                                                <div className="font-medium">{patient_profile.doctor}</div>
+                                            </div>
+                                        )}
+                                        {patient_profile?.primary_diagnosis && patient_profile.primary_diagnosis !== 'null' && (
+                                            <div>
+                                                <div className="text-white/60 text-xs uppercase mb-0.5">Primary Diagnosis</div>
+                                                <div className="font-medium">{patient_profile.primary_diagnosis}</div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -121,24 +159,34 @@ const ResultPage = () => {
                         <div className="col-span-12 lg:col-span-9 space-y-6">
 
                             {/* Top Demographics Row */}
-                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-6">
-                                <div className="space-y-1">
-                                    <label className="text-xs text-gray-400 uppercase font-semibold">Gender</label>
-                                    <div className="font-bold text-gray-800">{patient_profile?.gender || '-'}</div>
+                            {(!Object.values(patient_profile || {}).every(val => !val || val === 'null' || val === 'NA')) && (
+                                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-6">
+                                    {patient_profile?.gender && patient_profile.gender !== 'null' && patient_profile.gender !== 'NA' && (
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase font-semibold">Gender</label>
+                                            <div className="font-bold text-gray-800">{patient_profile.gender}</div>
+                                        </div>
+                                    )}
+                                    {patient_profile?.age && patient_profile.age !== 'null' && patient_profile.age !== 'NA' && (
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase font-semibold">Age</label>
+                                            <div className="font-bold text-gray-800">{patient_profile.age}</div>
+                                        </div>
+                                    )}
+                                    {patient_profile?.phone && patient_profile.phone !== 'null' && patient_profile.phone !== 'NA' && (
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase font-semibold">Phone</label>
+                                            <div className="font-bold text-gray-800">{patient_profile.phone}</div>
+                                        </div>
+                                    )}
+                                    {patient_profile?.location && patient_profile.location !== 'null' && patient_profile.location !== 'NA' && (
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400 uppercase font-semibold">Location</label>
+                                            <div className="font-bold text-gray-800">{patient_profile.location}</div>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs text-gray-400 uppercase font-semibold">Age</label>
-                                    <div className="font-bold text-gray-800">{patient_profile?.age || '-'}</div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs text-gray-400 uppercase font-semibold">Phone</label>
-                                    <div className="font-bold text-gray-800">{patient_profile?.phone || '-'}</div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs text-gray-400 uppercase font-semibold">Location</label>
-                                    <div className="font-bold text-gray-800">{patient_profile?.location || '-'}</div>
-                                </div>
-                            </div>
+                            )}
 
                             {/* AI Summary Banner */}
                             <div className="bg-gradient-to-r from-primary-600 to-indigo-600 rounded-2xl p-4 text-white flex justify-between items-center shadow-lg">
@@ -156,30 +204,34 @@ const ResultPage = () => {
 
                             {/* Chief Complaint & Diagnosis */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
-                                    <div className="absolute right-0 top-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-                                    <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
-                                        <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><Activity size={16} /></div>
-                                        Chief Complaint
-                                    </h4>
-                                    <p className="text-gray-600 leading-relaxed text-sm">
-                                        {sections?.chief_complaint || 'No complaints recorded.'}
-                                    </p>
-                                </div>
-                                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
-                                    <div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-                                    <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
-                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Heart size={16} /></div>
-                                        Diagnosis
-                                    </h4>
-                                    <p className="text-gray-600 leading-relaxed text-sm">
-                                        {sections?.diagnosis_details || patient_profile?.primary_diagnosis || 'No diagnosis recorded.'}
-                                    </p>
-                                </div>
+                                {sections?.chief_complaint && sections.chief_complaint !== 'null' && (
+                                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
+                                        <div className="absolute right-0 top-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
+                                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
+                                            <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><Activity size={16} /></div>
+                                            Chief Complaint
+                                        </h4>
+                                        <p className="text-gray-600 leading-relaxed text-sm">
+                                            {sections.chief_complaint}
+                                        </p>
+                                    </div>
+                                )}
+                                {(sections?.diagnosis_details !== 'null' || patient_profile?.primary_diagnosis !== 'null') && (
+                                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
+                                        <div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
+                                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
+                                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Heart size={16} /></div>
+                                            Diagnosis
+                                        </h4>
+                                        <p className="text-gray-600 leading-relaxed text-sm">
+                                            {sections?.diagnosis_details !== 'null' ? sections.diagnosis_details : patient_profile?.primary_diagnosis}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Key Findings */}
-                            {sections?.key_findings && (
+                            {sections?.key_findings && sections.key_findings.length > 0 && (
                                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
                                     <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
                                         <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"><Activity size={16} /></div>
@@ -192,9 +244,11 @@ const ResultPage = () => {
                                                 <div className="flex-grow">
                                                     {item.text}
                                                 </div>
-                                                <span className="text-gray-400 text-xs bg-gray-50 px-2 py-0.5 rounded border border-gray-100 whitespace-nowrap">
-                                                    Ref: Pg {item.page}
-                                                </span>
+                                                {item.page && (
+                                                    <span className="text-gray-400 text-xs bg-gray-50 px-2 py-0.5 rounded border border-gray-100 whitespace-nowrap">
+                                                        Ref: Pg {item.page}
+                                                    </span>
+                                                )}
                                             </li>
                                         ))}
                                     </ul>
@@ -202,7 +256,7 @@ const ResultPage = () => {
                             )}
 
                             {/* Treatment Plan */}
-                            {sections?.treatment_plan?.length > 0 && (
+                            {sections?.treatment_plan && sections.treatment_plan.length > 0 && (
                                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
                                     <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
                                         <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><PlusCircle size={16} /></div>
@@ -224,30 +278,36 @@ const ResultPage = () => {
 
 
                             {/* Current Medications Grid */}
-                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                                <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
-                                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><Pill size={16} /></div>
-                                    Current Medications
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {medications?.map((med, idx) => (
-                                        <div key={idx} className="p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all bg-gray-50/50">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h5 className="font-bold text-gray-900">{med.name}</h5>
-                                                {med.type && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full uppercase tracking-wide">{med.type}</span>}
-                                            </div>
-                                            <div className="text-xs text-gray-500 space-y-1">
-                                                <div className="flex justify-between">
-                                                    <span>Dose:</span> <span className="font-medium text-gray-700">{med.dose || 'N/A'}</span>
+                            {medications && medications.length > 0 && (
+                                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                                    <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
+                                        <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><Pill size={16} /></div>
+                                        Current Medications
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {medications.map((med, idx) => (
+                                            <div key={idx} className="p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all bg-gray-50/50">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <h5 className="font-bold text-gray-900">{med.name}</h5>
+                                                    {med.type && med.type !== 'null' && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full uppercase tracking-wide">{med.type}</span>}
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span>Frequency:</span> <span className="font-medium text-gray-700">{med.frequency || 'N/A'}</span>
+                                                <div className="text-xs text-gray-500 space-y-1">
+                                                    {med.dose && med.dose !== 'null' && (
+                                                        <div className="flex justify-between">
+                                                            <span>Dose:</span> <span className="font-medium text-gray-700">{med.dose}</span>
+                                                        </div>
+                                                    )}
+                                                    {med.frequency && med.frequency !== 'null' && (
+                                                        <div className="flex justify-between">
+                                                            <span>Frequency:</span> <span className="font-medium text-gray-700">{med.frequency}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Vitals & Charts Row */}
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -264,49 +324,55 @@ const ResultPage = () => {
                                     {/* Vitals Cards */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         {/* BP Card */}
-                                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
-                                            <div className="absolute right-0 top-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
-                                            <div className="flex flex-col h-full justify-between relative z-10">
-                                                <div className="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-3">
-                                                    <Droplet size={20} fill="currentColor" className="opacity-80" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm text-gray-500 font-medium mb-1">Blood Pressure</div>
-                                                    <div className="text-2xl font-bold text-gray-800">{sections?.vital_signs?.bp || '--/--'}</div>
-                                                    <div className="text-xs text-red-400 mt-1 font-medium">mmHg</div>
+                                        {sections?.vital_signs?.bp && sections.vital_signs.bp !== 'null' && (
+                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
+                                                <div className="absolute right-0 top-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
+                                                <div className="flex flex-col h-full justify-between relative z-10">
+                                                    <div className="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-3">
+                                                        <Droplet size={20} fill="currentColor" className="opacity-80" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm text-gray-500 font-medium mb-1">Blood Pressure</div>
+                                                        <div className="text-2xl font-bold text-gray-800">{sections.vital_signs.bp}</div>
+                                                        <div className="text-xs text-red-400 mt-1 font-medium">mmHg</div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
 
                                         {/* Heart Rate Card */}
-                                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
-                                            <div className="absolute right-0 top-0 w-24 h-24 bg-rose-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
-                                            <div className="flex flex-col h-full justify-between relative z-10">
-                                                <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mb-3">
-                                                    <Heart size={20} fill="currentColor" className="opacity-80" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm text-gray-500 font-medium mb-1">Heart Rate</div>
-                                                    <div className="text-2xl font-bold text-gray-800">{sections?.vital_signs?.hr || '--'}</div>
-                                                    <div className="text-xs text-rose-400 mt-1 font-medium">bpm</div>
+                                        {sections?.vital_signs?.hr && sections.vital_signs.hr !== 'null' && (
+                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
+                                                <div className="absolute right-0 top-0 w-24 h-24 bg-rose-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
+                                                <div className="flex flex-col h-full justify-between relative z-10">
+                                                    <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mb-3">
+                                                        <Heart size={20} fill="currentColor" className="opacity-80" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm text-gray-500 font-medium mb-1">Heart Rate</div>
+                                                        <div className="text-2xl font-bold text-gray-800">{sections.vital_signs.hr}</div>
+                                                        <div className="text-xs text-rose-400 mt-1 font-medium">bpm</div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
 
                                         {/* SpO2 / Respiratory Card */}
-                                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
-                                            <div className="absolute right-0 top-0 w-24 h-24 bg-cyan-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
-                                            <div className="flex flex-col h-full justify-between relative z-10">
-                                                <div className="w-10 h-10 rounded-full bg-cyan-100 text-cyan-500 flex items-center justify-center mb-3">
-                                                    <Activity size={20} />
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm text-gray-500 font-medium mb-1">SpO2 Level</div>
-                                                    <div className="text-2xl font-bold text-gray-800">{sections?.vital_signs?.spo2?.toString().replace('%', '') || '--'}%</div>
-                                                    <div className="text-xs text-cyan-400 mt-1 font-medium">Oxygen Saturation</div>
+                                        {sections?.vital_signs?.spo2 && sections.vital_signs.spo2 !== 'null' && (
+                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative overflow-hidden group">
+                                                <div className="absolute right-0 top-0 w-24 h-24 bg-cyan-50 rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:scale-110 transition-transform"></div>
+                                                <div className="flex flex-col h-full justify-between relative z-10">
+                                                    <div className="w-10 h-10 rounded-full bg-cyan-100 text-cyan-500 flex items-center justify-center mb-3">
+                                                        <Activity size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm text-gray-500 font-medium mb-1">SpO2 Level</div>
+                                                        <div className="text-2xl font-bold text-gray-800">{sections.vital_signs.spo2.toString().replace('%', '')}%</div>
+                                                        <div className="text-xs text-cyan-400 mt-1 font-medium">Oxygen Saturation</div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
 
                                     {/* Pulse Chart Section - Render ONLY if we have data trends */}
@@ -374,17 +440,20 @@ const ResultPage = () => {
                             </div>
 
                             {/* --- Personalized Patient Guidance --- */}
-                            {(personalized_guidance?.next_steps?.length > 0 || personalized_guidance?.lifestyle_tips?.length > 0) && (
+                            {personalized_guidance && (
                                 <div className="space-y-6">
                                     {/* Next Steps & Lifestyle Headers */}
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-lg font-bold text-gray-800">Personalized Guidance</h3>
-                                        <div className="h-px bg-gray-200 flex-grow"></div>
-                                    </div>
+                                    {(Array.isArray(personalized_guidance.next_steps) && personalized_guidance.next_steps.length > 0 ||
+                                        Array.isArray(personalized_guidance.lifestyle_tips) && personalized_guidance.lifestyle_tips.length > 0) && (
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="text-lg font-bold text-gray-800">Personalized Guidance</h3>
+                                                <div className="h-px bg-gray-200 flex-grow"></div>
+                                            </div>
+                                        )}
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* Next Steps */}
-                                        {personalized_guidance?.next_steps?.length > 0 && (
+                                        {Array.isArray(personalized_guidance.next_steps) && personalized_guidance.next_steps.length > 0 && (
                                             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
                                                 <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
                                                     <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Footprints size={16} /></div>
@@ -402,7 +471,7 @@ const ResultPage = () => {
                                         )}
 
                                         {/* Lifestyle Tips */}
-                                        {personalized_guidance?.lifestyle_tips?.length > 0 && (
+                                        {Array.isArray(personalized_guidance.lifestyle_tips) && personalized_guidance.lifestyle_tips.length > 0 && (
                                             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
                                                 <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-4">
                                                     <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center"><Utensils size={16} /></div>
@@ -423,7 +492,7 @@ const ResultPage = () => {
                             )}
 
                             {/* --- FAQs (Questions & Answers) --- */}
-                            {personalized_guidance?.faq?.length > 0 && (
+                            {personalized_guidance?.faq && personalized_guidance.faq.length > 0 && (
                                 <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl p-6 shadow-sm border border-indigo-100">
                                     <h4 className="flex items-center gap-2 font-bold text-indigo-900 mb-4">
                                         <div className="w-8 h-8 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center"><HelpCircle size={16} /></div>

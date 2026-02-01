@@ -1,24 +1,26 @@
 import os
 import json
-import re
+import logging
 from groq import Groq
 from .prompts import SYSTEM_PROMPT
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
+
+# Configure Logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 # Load environment variables
 from pathlib import Path
 
 # Build path to .env file relative to this script
-# this script is in backend/summarizer/groq_client.py
-# .env is in backend/.env
 BASE_DIR = Path(__file__).resolve().parent.parent
 env_path = BASE_DIR / '.env'
 
 if env_path.exists():
     load_dotenv(dotenv_path=env_path, override=True)
-    print(f"Loading .env from: {env_path}")
+    logger.info(f"Loading .env from: {env_path}")
 else:
-    print(f"WARNING: .env file not found at {env_path}")
+    logger.warning(f"WARNING: .env file not found at {env_path}")
     load_dotenv(override=True)
 
 # Manage API Keys with Rotation
@@ -39,9 +41,9 @@ GROQ_KEYS = list(set([k for k in GROQ_KEYS if k and k.strip()]))
 GROQ_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"]
 
 if not GROQ_KEYS:
-    print("WARNING: No GROQ_API_KEYs found in environment.")
+    logger.warning("WARNING: No GROQ_API_KEYs found in environment.")
 else:
-    print(f"Loaded {len(GROQ_KEYS)} Groq API keys for rotation.")
+    logger.info(f"Loaded {len(GROQ_KEYS)} Groq API keys for rotation.")
 
 def summarize_medical_chunks(chunks):
     """
@@ -56,6 +58,7 @@ def summarize_medical_chunks(chunks):
     """
     if not GROQ_KEYS:
         return json.dumps({
+            "insufficient_data": True,
             "patient_profile": {},
             "sections": { "chief_complaint": "Error: No GROQ_API_KEYs configured." },
             "medications": [],
@@ -75,8 +78,11 @@ def summarize_medical_chunks(chunks):
         user_instructions = f"""
 Extract medical data from the text below into specific JSON format. Use 'null' for missing fields. Infer medication types (e.g., 'Antibiotic').
 
+IMPORTANT: If the provided text does not contain sufficient or valid medical information (e.g., if it is gibberish, too short, or unrelated to a medical report), set "insufficient_data" to true.
+
 REQUIRED JSON STRUCTURE:
 {{
+  "insufficient_data": boolean,
   "patient_profile": {{ "name": "str", "age": "str", "gender": "str", "location": "str", "phone": "str", "email": "str", "doctor": "str", "primary_diagnosis": "str" }},
   "sections": {{
     "chief_complaint": "str",
@@ -163,7 +169,7 @@ DOCUMENT TEXT:
                 
                 for model in GROQ_MODELS:
                     try:
-                        # print(f"Attempting: Key #{i+1} | Model: {model}")
+                        logger.info(f"Calling Groq API | Key Index: {i+1} | Model: {model}")
                         chat_completion = temp_client.chat.completions.create(
                             messages=messages_payload,
                             model=model,
@@ -172,18 +178,16 @@ DOCUMENT TEXT:
                         )
 
                         content = chat_completion.choices[0].message.content
-                        print(f"\n\n=== DEBUG: LLM RAW RESPONSE (Key #{i+1} | {model}) ===\n")
-                        print(content)
-                        print("\n===============================\n")
+                        # logger.info(f"Summarization successful with Key #{i+1} and Model {model}")
                         return content
                     
                     except Exception as e:
-                        print(f"FAILED: Key #{i+1} | Model {model} -> {str(e)}")
+                        logger.error(f"FAILED: Key #{i+1} | Model {model} -> {str(e)}")
                         last_exception = e
                         continue # Try next model
                         
             except Exception as outer_e:
-                print(f"Critical Error with Key #{i+1}: {outer_e}")
+                logger.critical(f"Critical Error with Key #{i+1}: {outer_e}")
                 last_exception = outer_e
                 continue # Try next key
         
@@ -194,8 +198,9 @@ DOCUMENT TEXT:
             raise Exception("Unknown error: All API keys and models failed.")
 
     except Exception as e:
-        print(f"Error calling Groq API: {e}")
+        logger.exception(f"Error calling Groq API: {e}")
         return json.dumps({
+            "insufficient_data": True,
             "patient_profile": {},
             "sections": { "chief_complaint": f"Error generating summary: {str(e)}" },
             "medications": [],
